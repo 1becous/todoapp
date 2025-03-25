@@ -35,6 +35,12 @@ class TaskRead(TaskCreate):
     class Config:
         orm_mode = True
 
+class TaskUpdate(BaseModel):
+    title: str
+    description: str = ""
+    is_done: bool
+
+
 app = FastAPI()
 
 app.add_middleware(
@@ -74,16 +80,19 @@ def read_task(task_id: int, db: Session = Depends(get_db)):
     return task
 
 @app.put("/tasks/{task_id}", response_model=TaskRead)
-def update_task(task_id: int, task: TaskCreate, db: Session = Depends(get_db)):
+def update_task(task_id: int, task: TaskUpdate, db: Session = Depends(get_db)):
     db_task = db.query(Task).filter(Task.id == task_id).first()
     if not db_task:
         raise HTTPException(status_code=404, detail="Task not found")
 
     db_task.title = task.title
     db_task.description = task.description
+    db_task.is_done = task.is_done
+
     db.commit()
     db.refresh(db_task)
     return db_task
+
 
 @app.delete("/tasks/{task_id}")
 def delete_task(task_id: int, db: Session = Depends(get_db)):
